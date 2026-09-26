@@ -2,15 +2,22 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
+/**
+ * §10 — Input.
+ * Borderless: no visible stroke at rest, depth from --field-shadow.
+ * 12px radius, 8/12 padding. 40px tall and 16px text below 640px so iOS never
+ * zooms on focus; 36px and 14px from 640px up.
+ */
 function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
   return (
     <input
       type={type}
       data-slot="input"
       className={cn(
-        'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-input h-9 w-full min-w-0 rounded-md border bg-card px-3 py-1 text-base transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-card file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-        'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-        'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
+        'input',
+        'file:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium',
+        'selection:bg-accent-soft selection:text-foreground',
+        'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       {...props}

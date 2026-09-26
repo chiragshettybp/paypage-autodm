@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import {
   Zap, MessageCircle, Sparkles, ArrowUpRight, Github, Star,
   Send, AtSign, Brain, Inbox, Lock, Terminal,
-  Loader2,
 } from "lucide-react"
 
 const TELEGRAM_URL = "https://t.me/instagramautomationp8"
@@ -23,8 +22,6 @@ export function LandingPage() {
   }, [])
 
   const handleLogin = () => {
-    // Instagram Business Login (Instagram API with Instagram Login). client_id must be the
-    // Instagram app ID from the Instagram product page, not the parent Meta app ID.
     window.location.href = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=${process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID}&redirect_uri=${process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI}&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments`
   }
 
@@ -35,7 +32,7 @@ export function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#ededed] selection:bg-[#ffe14d] selection:text-black overflow-x-hidden antialiased">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground overflow-x-hidden antialiased">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap');
         .font-serif-display { font-family: 'Instrument Serif', Georgia, serif; }
@@ -45,7 +42,7 @@ export function LandingPage() {
         @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         .fade-up { animation: fade-up .7s cubic-bezier(.2,.7,.2,1) both; }
         .grain::before {
-          content: ""; position: fixed; inset: 0; z-index: 5; pointer-events: none; opacity: .04;
+          content: ""; position: fixed; inset: 0; z-index: 5; pointer-events: none; opacity: .03;
           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
         }
       `}</style>
@@ -53,34 +50,34 @@ export function LandingPage() {
       <div className="grain" />
 
       {/* Nav */}
-      <nav className="relative z-50 flex items-center justify-between px-5 md:px-10 h-16 border-b border-white/[0.08]">
+      <nav className="relative z-50 flex items-center justify-between px-5 md:px-10 h-16 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#ffe14d] text-black flex items-center justify-center rounded-[6px]">
-            <Zap className="w-3.5 h-3.5" strokeWidth={2.5} />
+          <div className="w-7 h-7 bg-primary text-primary-foreground flex items-center justify-center rounded-[6px]">
+            <img src="/logo.png" alt="" className="h-4 w-auto object-contain" />
           </div>
-          <span className="font-mono-ui text-sm font-bold tracking-tight">insta-p8</span>
-          <span className="hidden sm:inline-block font-mono-ui text-[10px] text-neutral-500 border border-white/10 rounded-full px-2 py-0.5">open source</span>
+          <span className="font-mono-ui text-sm font-bold tracking-tight">Paypage AutoDm</span>
+          <span className="hidden sm:inline-block font-mono-ui text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5">open source</span>
         </div>
         <div className="flex items-center gap-2">
           <a
             href={GITHUB_URL} target="_blank" rel="noreferrer"
-            className="flex items-center gap-1.5 font-mono-ui text-xs text-neutral-400 hover:text-white border border-white/10 hover:border-white/30 rounded-full px-3.5 py-1.5 transition-colors"
+            className="flex items-center gap-1.5 font-mono-ui text-xs text-muted-foreground hover:text-foreground border border-border hover:border-border/50 rounded-full px-3.5 py-1.5 transition-colors"
           >
             <Github className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Star</span>
-            {stars !== null && <span className="text-[#ffe14d]">{stars}</span>}
+            {stars !== null && <span className="text-primary">{stars}</span>}
           </a>
           {process.env.NODE_ENV === "development" && (
             <button
               onClick={handleTestLogin}
-              className="font-mono-ui text-xs font-bold text-[#ffe14d] border border-[#ffe14d]/30 rounded-full px-4 py-1.5 hover:bg-[#ffe14d]/10 transition-colors"
+              className="font-mono-ui text-xs font-bold text-primary border border-primary/30 rounded-full px-4 py-1.5 hover:bg-primary/10 transition-colors"
             >
               Dev Login
             </button>
           )}
           <button
             onClick={handleLogin}
-            className="font-mono-ui text-xs font-bold bg-white text-black rounded-full px-4 py-1.5 hover:bg-[#ffe14d] transition-colors"
+            className="font-mono-ui text-xs font-bold bg-primary text-primary-foreground rounded-full px-4 py-1.5 hover:bg-primary-hover active:scale-[0.99] transition-colors"
           >
             Log in
           </button>
@@ -91,26 +88,26 @@ export function LandingPage() {
       <main className="relative z-10">
         <section className="px-5 md:px-10 pt-16 md:pt-28 pb-16 max-w-6xl mx-auto">
           <div className="fade-up" style={{ animationDelay: "0ms" }}>
-            <p className="font-mono-ui text-[11px] uppercase tracking-[0.25em] text-neutral-500 mb-6">
+            <p className="font-mono-ui text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-6">
               Instagram automation // self-hosted // no monthly fees
             </p>
           </div>
 
-          <h1 className="fade-up font-serif-display text-[15vw] md:text-[7.5rem] leading-[0.95] tracking-tight" style={{ animationDelay: "80ms" }}>
+          <h1 className="fade-up font-serif-display text-[15vw] md:text-[7.5rem] leading-[0.95] tracking-tight text-foreground" style={{ animationDelay: "80ms" }}>
             Your DMs,
             <br />
-            <span className="italic text-[#ffe14d]">on autopilot.</span>
+            <span className="italic text-primary">on autopilot.</span>
           </h1>
 
           <div className="fade-up mt-10 flex flex-col md:flex-row md:items-end gap-8 md:gap-16" style={{ animationDelay: "160ms" }}>
-            <p className="text-neutral-400 text-base md:text-lg max-w-md leading-relaxed">
+            <p className="text-muted-foreground text-base md:text-lg max-w-md leading-relaxed">
               Comment-to-DM funnels, keyword triggers, story reactions, AI replies, a live inbox,
               and Reels scheduling. The open-source ManyChat alternative — your data stays in your own Supabase.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={handleLogin}
-                className="group flex items-center gap-2 bg-[#ffe14d] text-black font-mono-ui text-sm font-bold px-7 py-4 rounded-full hover:scale-[1.03] active:scale-[0.98] transition-transform"
+                className="group flex items-center gap-2 bg-primary text-primary-foreground font-mono-ui text-sm font-bold px-7 py-4 rounded-full hover:scale-[1.03] active:scale-[0.98] transition-transform press-spring"
               >
                 Connect Instagram
                 <ArrowUpRight className="w-4 h-4 group-hover:rotate-45 transition-transform" />
@@ -118,7 +115,7 @@ export function LandingPage() {
               {process.env.NODE_ENV === "development" && (
                 <button
                   onClick={handleTestLogin}
-                  className="group flex items-center gap-2 font-mono-ui text-sm font-bold text-[#ffe14d] border border-[#ffe14d]/25 px-7 py-4 rounded-full hover:bg-[#ffe14d]/10 active:scale-[0.98] transition-all"
+                  className="group flex items-center gap-2 font-mono-ui text-sm font-bold text-primary border border-primary/25 px-7 py-4 rounded-full hover:bg-primary/10 active:scale-[0.98] transition-all"
                 >
                   <Terminal className="w-4 h-4" />
                   Dev Login
@@ -126,7 +123,7 @@ export function LandingPage() {
               )}
               <a
                 href={TELEGRAM_URL} target="_blank" rel="noreferrer"
-                className="flex items-center gap-2 font-mono-ui text-sm text-neutral-300 border border-white/15 px-6 py-4 rounded-full hover:border-[#2AABEE]/60 hover:text-[#2AABEE] transition-colors"
+                className="flex items-center gap-2 font-mono-ui text-sm text-muted-foreground border border-border px-6 py-4 rounded-full hover:border-primary/60 hover:text-primary transition-colors"
               >
                 <Send className="w-4 h-4" />
                 Telegram support
@@ -136,13 +133,13 @@ export function LandingPage() {
         </section>
 
         {/* Marquee */}
-        <div className="border-y border-white/[0.08] py-3 overflow-hidden">
-          <div className="marquee-track flex whitespace-nowrap font-mono-ui text-xs uppercase tracking-[0.2em] text-neutral-600 gap-8 w-max">
+        <div className="border-y border-border py-3 overflow-hidden">
+          <div className="marquee-track flex whitespace-nowrap font-mono-ui text-xs uppercase tracking-[0.2em] text-muted-foreground gap-8 w-max">
             {Array.from({ length: 2 }).map((_, copy) => (
               <div key={copy} className="flex gap-8">
                 {["comment → DM", "keyword triggers", "story reactions", "AI auto-reply", "live inbox", "ice breakers", "follow gate", "quick replies", "media attachments", "public + private replies"].map((t) => (
                   <span key={t} className="flex items-center gap-8">
-                    {t} <span className="text-[#ffe14d]">✦</span>
+                    {t} <span className="text-primary">✦</span>
                   </span>
                 ))}
               </div>
@@ -153,11 +150,11 @@ export function LandingPage() {
         {/* Feature grid */}
         <section className="px-5 md:px-10 py-20 max-w-6xl mx-auto">
           <div className="flex items-baseline justify-between mb-10">
-            <h2 className="font-serif-display text-4xl md:text-5xl">Everything the paid tools do.</h2>
-            <span className="hidden md:block font-mono-ui text-xs text-neutral-600">$0/month</span>
+            <h2 className="font-serif-display text-4xl md:text-5xl text-foreground">Everything the paid tools do.</h2>
+            <span className="hidden md:block font-mono-ui text-xs text-muted-foreground">$0/month</span>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-px bg-white/[0.08] border border-white/[0.08]">
+          <div className="grid md:grid-cols-3 gap-px bg-border border border-border">
             <Feature icon={<MessageCircle className="w-4 h-4" />} title="Comment → DM funnels"
               desc="Keyword or reply-all triggers on any post. Choose DM only, public reply only, or both — with your own rotating public replies." />
             <Feature icon={<Send className="w-4 h-4" />} title="DM keyword automation"
@@ -179,10 +176,10 @@ export function LandingPage() {
 
         {/* Community strip */}
         <section className="px-5 md:px-10 pb-24 max-w-6xl mx-auto">
-          <div className="border border-white/[0.08] rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 bg-gradient-to-br from-white/[0.03] to-transparent">
+          <div className="border border-border rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 bg-surface-secondary">
             <div>
-              <h3 className="font-serif-display text-3xl md:text-4xl mb-2">Built in the open.</h3>
-              <p className="text-neutral-500 text-sm max-w-md">
+              <h3 className="font-serif-display text-3xl md:text-4xl text-foreground mb-2">Built in the open.</h3>
+              <p className="text-muted-foreground text-sm max-w-md">
                 Stars, sponsors, and testers keep this project alive. Questions, bugs, feature requests —
                 the Telegram chat is where it all happens.
               </p>
@@ -190,15 +187,15 @@ export function LandingPage() {
             <div className="flex flex-wrap items-center gap-3">
               <a
                 href={TELEGRAM_URL} target="_blank" rel="noreferrer"
-                className="flex items-center gap-2 bg-[#2AABEE] text-white font-mono-ui text-xs font-bold px-5 py-3 rounded-full hover:brightness-110 transition-all"
+                className="flex items-center gap-2 bg-primary text-primary-foreground font-mono-ui text-xs font-bold px-5 py-3 rounded-full hover:bg-primary-hover transition-colors press-spring"
               >
                 <Send className="w-3.5 h-3.5" /> Join Telegram
               </a>
               <a
                 href={GITHUB_URL} target="_blank" rel="noreferrer"
-                className="flex items-center gap-2 border border-white/15 text-neutral-300 font-mono-ui text-xs font-bold px-5 py-3 rounded-full hover:border-white/40 transition-colors"
+                className="flex items-center gap-2 border border-border text-muted-foreground font-mono-ui text-xs font-bold px-5 py-3 rounded-full hover:border-border/50 hover:text-foreground transition-colors"
               >
-                <Star className="w-3.5 h-3.5 text-[#ffe14d]" /> Star on GitHub
+                <Star className="w-3.5 h-3.5 text-primary" /> Star on GitHub
               </a>
             </div>
           </div>
@@ -206,13 +203,13 @@ export function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.08] px-5 md:px-10 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-        <span className="font-mono-ui text-[11px] text-neutral-600">
-          insta-p8 — open-source Instagram automation. MIT licensed.
+      <footer className="border-t border-border px-5 md:px-10 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <span className="font-mono-ui text-[11px] text-muted-foreground">
+          Paypage AutoDm — open-source Instagram automation. MIT licensed.
         </span>
-        <div className="flex items-center gap-5 font-mono-ui text-[11px] text-neutral-500">
-          <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">GitHub</a>
-          <a href={TELEGRAM_URL} target="_blank" rel="noreferrer" className="hover:text-[#2AABEE] transition-colors">Telegram support</a>
+        <div className="flex items-center gap-5 font-mono-ui text-[11px] text-muted-foreground">
+          <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
+          <a href={TELEGRAM_URL} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Telegram support</a>
         </div>
       </footer>
     </div>
@@ -221,12 +218,12 @@ export function LandingPage() {
 
 function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <div className="bg-[#0a0a0a] p-7 group hover:bg-[#0f0f0e] transition-colors">
-      <div className="w-9 h-9 rounded-lg border border-white/10 flex items-center justify-center text-neutral-500 group-hover:text-[#ffe14d] group-hover:border-[#ffe14d]/30 transition-colors mb-5">
+    <div className="bg-card p-7 group hover:bg-surface-secondary transition-colors">
+      <div className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:border-primary/30 transition-colors mb-5">
         {icon}
       </div>
-      <h3 className="font-mono-ui text-sm font-bold text-white mb-2">{title}</h3>
-      <p className="text-[13px] text-neutral-500 leading-relaxed">{desc}</p>
+      <h3 className="font-mono-ui text-sm font-bold text-foreground mb-2">{title}</h3>
+      <p className="text-[13px] text-muted-foreground leading-relaxed">{desc}</p>
     </div>
   )
 }

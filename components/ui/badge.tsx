@@ -1,35 +1,53 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "@/lib/utils"
+import * as React from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
 
+import { cn } from '@/lib/utils'
+
+/**
+ * §6.3 — Badge, 24px radius, neutral by default. Tone variants exist for
+ * status only; nothing decorative should be coloured.
+ */
 const badgeVariants = cva(
-    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-    {
-        variants: {
-            variant: {
-                default:
-                    "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-                secondary:
-                    "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                destructive:
-                    "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-                outline: "text-foreground",
-            },
-        },
-        defaultVariants: {
-            variant: "default",
-        },
-    }
+  [
+    'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-3xl',
+    'px-2.5 py-1 text-xs font-medium leading-4',
+    'transition-standard',
+  ],
+  {
+    variants: {
+      variant: {
+        default: 'bg-secondary text-secondary-foreground',
+        accent: 'bg-accent-soft text-accent-soft-foreground',
+        success: 'bg-success-soft text-success-soft-foreground',
+        warning: 'bg-warning-soft text-warning-soft-foreground',
+        danger: 'bg-danger-soft text-danger-soft-foreground',
+        outline: 'border border-border text-foreground',
+        /** Solid yellow, for the current step in a wizard */
+        primary: 'bg-primary text-primary-foreground',
+      },
+      size: {
+        sm: 'px-2 py-0.5 text-xs',
+        md: 'px-2.5 py-1 text-xs',
+        lg: 'px-3 py-1.5 text-sm',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'md',
+    },
+  },
 )
 
-export interface BadgeProps
-    extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> { }
+type BadgeProps = React.ComponentProps<'span'> & VariantProps<typeof badgeVariants>
 
-function Badge({ className, variant, ...props }: BadgeProps) {
-    return (
-        <div className={cn(badgeVariants({ variant }), className)} {...props} />
-    )
+function Badge({ className, variant, size, ...props }: BadgeProps) {
+  return (
+    <span
+      data-slot="badge"
+      className={cn(badgeVariants({ variant, size }), className)}
+      {...props}
+    />
+  )
 }
 
-export { Badge, badgeVariants }
+export { Badge, badgeVariants, type BadgeProps }

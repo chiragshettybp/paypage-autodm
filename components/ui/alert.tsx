@@ -3,14 +3,25 @@ import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
 
+/**
+ * §17.4 — Alert. 20px radius, soft tone fill, tone-coloured icon, 16px gap
+ * between icon and text. 24px gap is too loose at 14px type.
+ */
 const alertVariants = cva(
-  'relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current',
+  [
+    'relative flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-sm',
+    '[&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:translate-y-0.5',
+  ],
   {
     variants: {
       variant: {
-        default: 'bg-card text-card-foreground',
+        /** Neutral inline notice */
+        default: 'border-border bg-surface-secondary text-foreground',
+        accent: 'border-transparent bg-accent-soft text-accent-soft-foreground',
+        success: 'border-transparent bg-success-soft text-success-soft-foreground',
+        warning: 'border-transparent bg-warning-soft text-warning-soft-foreground',
         destructive:
-          'text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90',
+          'border-transparent bg-danger-soft text-danger-soft-foreground',
       },
     },
     defaultVariants: {
@@ -38,24 +49,19 @@ function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-title"
-      className={cn(
-        'col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight',
-        className,
-      )}
+      className={cn('text-sm font-semibold leading-5', className)}
       {...props}
     />
   )
 }
 
-function AlertDescription({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) {
+function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-description"
       className={cn(
-        'text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed',
+        'text-sm leading-5 opacity-90',
+        '*:data-[slot=alert-description]:text-inherit',
         className,
       )}
       {...props}
@@ -63,4 +69,4 @@ function AlertDescription({
   )
 }
 
-export { Alert, AlertTitle, AlertDescription }
+export { Alert, AlertTitle, AlertDescription, alertVariants }

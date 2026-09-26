@@ -1,157 +1,279 @@
-"use client"
-import { useEffect, useState } from "react"
-import { Brain, Loader2 } from "lucide-react"
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import { BrainIcon, CheckIcon, ChevronDownIcon, EyeIcon, EyeOffIcon } from 'lucide-react'
+
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { StatusPill } from '@/components/shared/status-pill'
+import { FormField, TextareaField } from '@/components/shared/form-field'
+import { Skeleton } from '@/components/ui/skeleton'
+
+/**
+ * §10.2 / §18.7 — AI assistant settings.
+ *
+ * The enable switch writes immediately on its own; the configuration panel is
+ * a separate, explicit save. Mixing the two would mean toggling the feature
+ * silently discards half-typed config.
+ */
 export function AssistantSettings({ userId }: { userId: string }) {
-    const [aiEnabled, setAiEnabled] = useState(false)
-    const [aiLoading, setAiLoading] = useState(true)
-    const [aiToggling, setAiToggling] = useState(false)
-    const [showAiContext, setShowAiContext] = useState(false)
-    const [aiContext, setAiContext] = useState("")
-    const [aiContextSaving, setAiContextSaving] = useState(false)
-    const [aiContextSaved, setAiContextSaved] = useState(false)
-    const [groqApiKey, setGroqApiKey] = useState("")
-    const [hasApiKey, setHasApiKey] = useState(false)
-    const [showApiKey, setShowApiKey] = useState(false)
-    const [aiBaseUrl, setAiBaseUrl] = useState("")
-    const [aiModel, setAiModel] = useState("")
+  const [enabled, setEnabled] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [toggling, setToggling] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [context, setContext] = useState('')
+  const [baseUrl, setBaseUrl] = useState('')
+  const [model, setModel] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [hasApiKey, setHasApiKey] = useState(false)
+  const [revealKey, setRevealKey] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => {
-        if (!userId) return
-        fetch(`/api/groq/auto-reply?userId=${userId}`)
-            .then(res => res.json())
-            .then(data => {
-                setAiEnabled(data.enabled ?? false)
-                setAiContext(data.ai_context ?? "")
-                setHasApiKey(data.has_api_key ?? false)
-                setAiBaseUrl(data.ai_base_url ?? "")
-                setAiModel(data.ai_model ?? "")
-            })
-            .catch(() => {})
-            .finally(() => setAiLoading(false))
-    }, [userId])
-
-    const handleSaveAiContext = async () => {
-        if (aiContextSaving) return
-        setAiContextSaving(true)
-        try {
-            await fetch("/api/groq/auto-reply", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId,
-                    enabled: aiEnabled,
-                    ai_context: aiContext,
-                    ai_base_url: aiBaseUrl,
-                    ai_model: aiModel,
-                    ...(groqApiKey !== "" ? { groq_api_key: groqApiKey } : {}),
-                }),
-            })
-            if (groqApiKey) { setHasApiKey(true); setGroqApiKey(""); setShowApiKey(false) }
-            setAiContextSaved(true)
-            setTimeout(() => setAiContextSaved(false), 2000)
-        } catch {}
-        setAiContextSaving(false)
+  const load = useCallback(async () => {
+    if (!userId) {
+      setLoading(false)
+      return
     }
-
-    const handleToggleAI = async () => {
-        if (aiToggling) return
-        setAiToggling(true)
-        const newState = !aiEnabled
-        try {
-            const res = await fetch("/api/groq/auto-reply", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId, enabled: newState }),
-            })
-            if (res.ok) setAiEnabled(newState)
-        } catch {}
-        setAiToggling(false)
+    try {
+      const response = await fetch(`/api/groq/auto-reply?userId=${userId}`)
+      if (!response.ok) throw new Error('Could not load assistant settings.')
+      const data = await response.json()
+      setEnabled(data.enabled ?? false)
+      setContext(data.ai_context ?? '')
+      setHasApiKey(data.has_api_key ?? false)
+      setBaseUrl(data.ai_base_url ?? '')
+      setModel(data.ai_model ?? '')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load settings.')
+    } finally {
+      setLoading(false)
     }
+  }, [userId])
 
+  useEffect(() => {
+    void load()
+  }, [load])
 
-return <details className="mt-6 border-t border-border pt-4"><summary className="cursor-pointer text-xs text-muted-foreground">AI assistant settings</summary><div className="mt-4 flex items-center gap-3"><button type="button" disabled={aiLoading || aiToggling} onClick={handleToggleAI} className="rounded-lg border border-border bg-card px-3 py-2 text-xs">{aiLoading ? "Loading…" : aiToggling ? "Saving…" : aiEnabled ? "AI enabled · Turn off" : "AI disabled · Turn on"}</button><button type="button" onClick={() => setShowAiContext(!showAiContext)} className="text-xs underline">Configure assistant</button></div>{showAiContext && (
-                    <div className="rounded-xl border border-border bg-card p-5 animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
-                        <div className="flex items-center gap-2">
-                            <Brain className="w-4 h-4" />
-                            <span className="text-sm font-semibold">AI assistant settings</span>
-                        </div>
+  async function handleToggle(next: boolean) {
+    if (toggling) return
+    setToggling(true)
+    setError(null)
+    // Optimistic: the switch must feel instant. Reverted if the write fails.
+    setEnabled(next)
+    try {
+      const response = await fetch('/api/groq/auto-reply', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, enabled: next }),
+      })
+      if (!response.ok) throw new Error('Could not change that setting.')
+    } catch (err) {
+      setEnabled(!next)
+      setError(err instanceof Error ? err.message : 'Could not change that setting.')
+    } finally {
+      setToggling(false)
+    }
+  }
 
-                        {/* API Key */}
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                                <label className="text-xs text-neutral-400 font-medium">API Key</label>
-                                {hasApiKey && !showApiKey && (
-                                    <span className="text-[10px] text-emerald-500 font-mono">● key saved</span>
-                                )}
-                            </div>
-                            {showApiKey || !hasApiKey ? (
-                                <div className="flex gap-2">
-                                    <input
-                                        type="password"
-                                        value={groqApiKey}
-                                        onChange={e => setGroqApiKey(e.target.value)}
-                                        placeholder={hasApiKey ? "Enter new key to replace…" : "sk_… or gsk_…"}
-                                        className="flex-1 bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
-                                    />
-                                    {hasApiKey && (
-                                        <button onClick={() => setShowApiKey(false)} className="px-3 py-2.5 rounded-xl border border-white/10 text-neutral-500 text-xs hover:text-white transition-colors">Cancel</button>
-                                    )}
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => setShowApiKey(true)}
-                                    className="w-full text-left px-4 py-2.5 rounded-xl border border-white/10 text-neutral-500 text-sm hover:border-white/20 hover:text-white transition-colors"
-                                >
-                                    •••••••••••••••••••• <span className="text-xs ml-2 text-neutral-600">click to replace</span>
-                                </button>
-                            )}
-                        </div>
+  async function handleSave() {
+    if (saving) return
+    setSaving(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/groq/auto-reply', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          enabled,
+          ai_context: context,
+          ai_base_url: baseUrl,
+          ai_model: model,
+          // Only send the key when a new one was typed, so an empty field
+          // never wipes the stored key
+          ...(apiKey !== '' ? { groq_api_key: apiKey } : {}),
+        }),
+      })
+      if (!response.ok) throw new Error('Could not save your settings.')
+      if (apiKey) {
+        setHasApiKey(true)
+        setApiKey('')
+        setRevealKey(false)
+      }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save your settings.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
-                        {/* API Base URL */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs text-neutral-400 font-medium">API Base URL <span className="text-neutral-600 font-normal">(optional)</span></label>
-                            <input
-                                type="text"
-                                value={aiBaseUrl}
-                                onChange={e => setAiBaseUrl(e.target.value)}
-                                placeholder="https://api.groq.com/v1  (default) or your own endpoint"
-                                className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
-                            />
-                            <p className="text-[11px] text-neutral-600">Any OpenAI-compatible endpoint works — Groq, OpenAI, Together, your own proxy.</p>
-                        </div>
+  if (loading) {
+    return (
+      <section className="card" aria-busy="true">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-6 w-11 rounded-full" />
+        </div>
+        <Skeleton className="h-4 w-64 max-w-full" />
+      </section>
+    )
+  }
 
-                        {/* Model */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs text-neutral-400 font-medium">Model <span className="text-neutral-600 font-normal">(optional)</span></label>
-                            <input
-                                type="text"
-                                value={aiModel}
-                                onChange={e => setAiModel(e.target.value)}
-                                placeholder="llama-3.1-8b-instant  (Groq default)"
-                                className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
-                            />
-                        </div>
+  return (
+    <section className="card" aria-labelledby="assistant-heading">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-soft-foreground">
+            <BrainIcon className="size-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2
+                id="assistant-heading"
+                className="text-base font-semibold leading-6"
+              >
+                AI assistant
+              </h2>
+              <StatusPill tone={enabled ? 'live' : 'neutral'}>
+                {enabled ? 'On' : 'Off'}
+              </StatusPill>
+            </div>
+            <p className="text-sm leading-5 text-muted-foreground">
+              Let the assistant write replies that sound like you.
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={enabled}
+          disabled={toggling}
+          onCheckedChange={(next) => void handleToggle(next)}
+          aria-label="Enable the AI assistant"
+          className="mt-1 shrink-0"
+        />
+      </div>
 
-                        {/* AI Personality Context */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs text-neutral-400 font-medium">AI Personality Context</label>
-                            <p className="text-[11px] text-neutral-600">Tell AI about your account — niche, products, tone, what to say/avoid.</p>
-                            <textarea
-                                value={aiContext}
-                                onChange={e => setAiContext(e.target.value)}
-                                placeholder={`e.g. This is a fitness coaching account. I sell online training programs (₹2999/mo). My tone is motivating but chill. If someone asks about pricing, tell them to DM for a free consultation. Never promise specific results.`}
-                                rows={4}
-                                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                            />
-                        </div>
+      <div className="border-t border-separator pt-4">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="assistant-config"
+          className="press-subtle -mx-1 flex w-full items-center justify-between gap-3 rounded-lg px-1 py-1 text-left"
+        >
+          <span className="text-sm font-semibold">Configure assistant</span>
+          <ChevronDownIcon
+            className={cn('chevron-rotate size-4 shrink-0 text-muted-foreground')}
+            data-open={open || undefined}
+            aria-hidden="true"
+          />
+        </button>
 
-                        <button
-                            onClick={handleSaveAiContext}
-                            disabled={aiContextSaving}
-                            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50"
-                        >
-                            {aiContextSaving ? 'Saving...' : aiContextSaved ? 'Saved ✓' : 'Save'}
-                        </button>
-                    </div>
-                )}</details>
+        <div
+          id="assistant-config"
+          data-open={open}
+          className="expand-animated"
+          {...(!open ? { inert: true } : {})}
+        >
+          <div>
+            <div className="flex flex-col gap-4 pt-4">
+              <FormField
+                id="assistant-key"
+                label="API key"
+                description="Stored on the server and never sent back to the browser."
+                type={revealKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(event) => setApiKey(event.target.value)}
+                placeholder={hasApiKey ? 'Enter a new key to replace it' : 'gsk_…'}
+                autoComplete="off"
+                spellCheck={false}
+                inputClassName="font-mono"
+                action={
+                  <div className="flex items-center gap-2">
+                    {hasApiKey && !apiKey && (
+                      <StatusPill tone="live" dot={false}>
+                        Key saved
+                      </StatusPill>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setRevealKey((v) => !v)}
+                      aria-label={revealKey ? 'Hide API key' : 'Show API key'}
+                      className="press-subtle flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-standard hover:bg-surface-secondary hover:text-foreground"
+                    >
+                      {revealKey ? (
+                        <EyeOffIcon className="size-4" aria-hidden="true" />
+                      ) : (
+                        <EyeIcon className="size-4" aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
+                }
+              />
+
+              <FormField
+                id="assistant-base-url"
+                label="API base URL"
+                description="Optional. Any OpenAI-compatible endpoint works — Groq, OpenAI, Together, or your own proxy."
+                value={baseUrl}
+                onChange={(event) => setBaseUrl(event.target.value)}
+                placeholder="https://api.groq.com/v1"
+                autoComplete="off"
+                spellCheck={false}
+                inputClassName="font-mono"
+              />
+
+              <FormField
+                id="assistant-model"
+                label="Model"
+                description="Optional. Defaults to the provider's recommended model."
+                value={model}
+                onChange={(event) => setModel(event.target.value)}
+                placeholder="llama-3.1-8b-instant"
+                autoComplete="off"
+                spellCheck={false}
+                inputClassName="font-mono"
+              />
+
+              <TextareaField
+                id="assistant-context"
+                label="Personality and context"
+                description="Your niche, products, tone, and anything the assistant should never say. This is sent with every request, so leave anything confidential out."
+                value={context}
+                onChange={(event) => setContext(event.target.value)}
+                rows={5}
+                placeholder="e.g. This is a fitness coaching account. I sell online training programs. My tone is motivating but calm. If someone asks about pricing, point them to a free consultation."
+              />
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex items-center gap-3">
+                <Button onClick={() => void handleSave()} loading={saving}>
+                  {saved ? 'Saved' : 'Save settings'}
+                </Button>
+                {saved && (
+                  <span
+                    role="status"
+                    className="check-pop inline-flex items-center gap-1.5 text-sm text-success-soft-foreground"
+                  >
+                    <CheckIcon className="size-4" aria-hidden="true" />
+                    Saved
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
 }

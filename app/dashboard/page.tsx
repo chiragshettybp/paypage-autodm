@@ -1,67 +1,332 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { ArrowRight, Bot, CheckCircle2, Loader2, MessageSquare, Plus, Users, Workflow } from "lucide-react"
-import { useInstagramSession } from "@/hooks/use-instagram-session"
+import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
+import {
+  ArrowRightIcon,
+  CheckCircle2Icon,
+  MessageSquareIcon,
+  MessagesSquareIcon,
+  PlusIcon,
+  SparklesIcon,
+  UsersIcon,
+  WorkflowIcon,
+} from 'lucide-react'
+
+import { useInstagramSession } from '@/hooks/use-instagram-session'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Eyebrow } from '@/components/shared/eyebrow'
+import { StatCard } from '@/components/shared/stat-card'
+import { StatusPill } from '@/components/shared/status-pill'
+import {
+  EmptyState,
+  ErrorState,
+  ListSkeleton,
+  StatCardSkeleton,
+} from '@/components/shared/states'
+import {
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderDescription,
+  PageHeaderText,
+  PageHeaderTitle,
+} from '@/components/shared/page-header'
 
 interface DashboardStats {
-  metrics: { totalAutomations: number; activeTriggers: number; audienceReached: number; messagesSent: number }
-  recentActivity: Array<{ id: string; content: string; created_at: string; recipient?: { recipient_username: string } }>
+  metrics: {
+    totalAutomations: number
+    activeTriggers: number
+    audienceReached: number
+    messagesSent: number
+  }
+  recentActivity: Array<{
+    id: string
+    content: string
+    created_at: string
+    recipient?: { recipient_username: string }
+  }>
 }
 
 export default function DashboardPage() {
   const { username, userId, isLoading: sessionLoading } = useInstagramSession()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<unknown>(null)
 
-  useEffect(() => {
-    if (!userId) return
+  const load = useCallback(() => {
+    if (!userId) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    setError(null)
     fetch(`/api/dashboard/stats?userId=${userId}`)
-      .then(response => response.json())
-      .then(data => { if (data && !data.error) setStats(data) })
-      .catch(error => console.error("Failed to load dashboard stats", error))
+      .then((response) => {
+        if (!response.ok) throw new Error(`Request failed (${response.status})`)
+        return response.json()
+      })
+      .then((data) => {
+        if (data?.error) throw new Error(data.error)
+        setStats(data)
+      })
+      .catch((err) => setError(err))
       .finally(() => setLoading(false))
   }, [userId])
 
-  if (sessionLoading || loading) return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="size-5 animate-spin text-muted-foreground" /></div>
+  useEffect(() => {
+    load()
+  }, [load])
+
+  if (sessionLoading) {
+    return <DashboardSkeleton />
+  }
 
   const metrics = stats?.metrics
-  return (
-    <div className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-8 lg:px-10">
-      <header className="flex flex-col justify-between gap-5 border-b border-border pb-7 sm:flex-row sm:items-end">
-        <div><p className="text-sm text-muted-foreground">Welcome back, {username || "creator"}</p><h1 className="mt-1 text-3xl font-semibold tracking-[-0.03em]">Your workspace</h1></div>
-        <Link href="/dashboard/automations" className="inline-flex h-10 w-fit items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="size-4" />Create workflow</Link>
-      </header>
+  const activity = stats?.recentActivity ?? []
+  const firstName = username ? username.split(/[._-]/)[0] : null
 
-      <section className="grid border-b border-border sm:grid-cols-2 lg:grid-cols-4" aria-label="Account summary">
-        <Metric label="Workflows" value={metrics?.totalAutomations ?? 0} icon={Workflow} />
-        <Metric label="Active triggers" value={metrics?.activeTriggers ?? 0} icon={CheckCircle2} />
-        <Metric label="Messages sent" value={metrics?.messagesSent ?? 0} icon={MessageSquare} />
-        <Metric label="People reached" value={metrics?.audienceReached ?? 0} icon={Users} />
+  return (
+    <div className="section-stack">
+      <PageHeader>
+        <PageHeaderText>
+          <Eyebrow>Overview</Eyebrow>
+          <PageHeaderTitle>
+            {firstName ? `Welcome back, ${firstName}` : 'Your workspace'}
+          </PageHeaderTitle>
+          <PageHeaderDescription>
+            Everything your automations have sent, in one place.
+          </PageHeaderDescription>
+        </PageHeaderText>
+        <PageHeaderActions>
+          <Button asChild>
+            <Link href="/dashboard/automations">
+              <PlusIcon className="size-4" aria-hidden="true" />
+              New automation
+            </Link>
+          </Button>
+        </PageHeaderActions>
+      </PageHeader>
+
+      {error !== null && (
+        <ErrorState
+          title="Could not load your numbers"
+          description="The dashboard could not reach the server. Your automations are unaffected."
+          error={error}
+          onRetry={load}
+        />
+      )}
+
+      <section
+        aria-label="Account summary"
+        className="grid grid-cols-2 gap-3 min-[64rem]:grid-cols-4"
+      >
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))
+          : [
+              {
+                label: 'Automations',
+                value: metrics?.totalAutomations ?? 0,
+                icon: WorkflowIcon,
+              },
+              {
+                label: 'Active triggers',
+                value: metrics?.activeTriggers ?? 0,
+                icon: CheckCircle2Icon,
+              },
+              {
+                label: 'Messages sent',
+                value: metrics?.messagesSent ?? 0,
+                icon: MessageSquareIcon,
+              },
+              {
+                label: 'People reached',
+                value: metrics?.audienceReached ?? 0,
+                icon: UsersIcon,
+              },
+            ].map((item) => (
+              <StatCard
+                key={item.label}
+                label={item.label}
+                value={item.value.toLocaleString()}
+                icon={item.icon}
+              />
+            ))}
       </section>
 
-      <div className="grid gap-6 py-7 lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.8fr)]">
-        <section className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-5 py-4"><div><h2 className="text-sm font-semibold">Recent conversations</h2><p className="mt-1 text-xs text-muted-foreground">Latest replies sent by your workflows</p></div><Link href="/dashboard/inbox" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">View all<ArrowRight className="size-3.5" /></Link></div>
-          <div className="divide-y divide-border">
-            {stats?.recentActivity?.length ? stats.recentActivity.slice(0, 6).map(message => <div key={message.id} className="flex items-center gap-3 px-5 py-4"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary"><MessageSquare className="size-4" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">@{message.recipient?.recipient_username || "instagram_user"}</p><p className="mt-1 truncate text-xs text-muted-foreground">{message.content}</p></div><time className="text-xs text-muted-foreground">{new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time></div>) : <EmptyState icon={MessageSquare} title="No conversations yet" description="New automated replies will appear here." />}
+      <div className="grid gap-4 min-[64rem]:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <section className="card card-none overflow-hidden" aria-labelledby="recent-heading">
+          <div className="flex items-center justify-between gap-3 p-4 sm:p-5">
+            <div className="min-w-0">
+              <h2
+                id="recent-heading"
+                className="text-base font-semibold leading-6"
+              >
+                Recent conversations
+              </h2>
+              <p className="mt-0.5 text-sm leading-5 text-muted-foreground">
+                The latest replies your automations sent.
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="shrink-0">
+              <Link href="/dashboard/inbox">
+                View all
+                <ArrowRightIcon className="size-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="border-t border-separator">
+            {loading ? (
+              <ListSkeleton count={4} className="p-3" />
+            ) : activity.length > 0 ? (
+              <ul className="flex flex-col divide-y divide-separator">
+                {activity.slice(0, 6).map((message) => (
+                  <li key={message.id}>
+                    <Link
+                      href="/dashboard/inbox"
+                      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-secondary sm:px-5"
+                    >
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-muted-foreground">
+                        <MessageSquareIcon
+                          className="size-4"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium leading-5">
+                          @{message.recipient?.recipient_username || 'instagram_user'}
+                        </p>
+                        <p className="mt-0.5 truncate text-sm leading-5 text-muted-foreground">
+                          {message.content}
+                        </p>
+                      </div>
+                      <time
+                        dateTime={message.created_at}
+                        className="shrink-0 text-xs leading-4 text-muted-foreground tabular-nums"
+                      >
+                        {new Date(message.created_at).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </time>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                icon={<MessagesSquareIcon />}
+                title="No conversations yet"
+                description="Replies sent by your automations will appear here."
+                action={
+                  <Button asChild size="sm">
+                    <Link href="/dashboard/automations">
+                      Create your first automation
+                    </Link>
+                  </Button>
+                }
+                className="m-3 min-h-0 border-0 sm:m-4"
+              />
+            )}
           </div>
         </section>
 
-        <aside className="space-y-6">
-          <section className="rounded-xl border border-border bg-card p-5"><div className="flex items-center gap-3"><span className="flex size-9 items-center justify-center rounded-lg bg-secondary"><Bot className="size-4" /></span><div><h2 className="text-sm font-semibold">Automation status</h2><p className="mt-0.5 text-xs text-muted-foreground">Your workspace is connected</p></div></div><dl className="mt-5 space-y-3 border-t border-border pt-4 text-sm"><div className="flex justify-between"><dt className="text-muted-foreground">Instagram</dt><dd className="flex items-center gap-1.5 font-medium"><span className="size-1.5 rounded-full bg-foreground" />Connected</dd></div><div className="flex justify-between"><dt className="text-muted-foreground">Running workflows</dt><dd className="font-medium">{metrics?.activeTriggers ?? 0}</dd></div></dl></section>
-          <section className="rounded-xl bg-primary p-5 text-primary-foreground"><h2 className="text-sm font-semibold">Build your next workflow</h2><p className="mt-2 text-xs leading-5 text-primary-foreground/75">Turn a comment, direct message, or story reply into an automatic response.</p><Link href="/dashboard/automations" className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold">Open workflow builder<ArrowRight className="size-3.5" /></Link></section>
+        <aside className="flex flex-col gap-4">
+          <section className="card" aria-labelledby="status-heading">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-soft-foreground">
+                <SparklesIcon className="size-4" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h2
+                  id="status-heading"
+                  className="text-base font-semibold leading-6"
+                >
+                  Account status
+                </h2>
+                <p className="text-sm leading-5 text-muted-foreground">
+                  {username ? `@${username}` : 'Not connected'}
+                </p>
+              </div>
+            </div>
+
+            <dl className="mt-1 flex flex-col gap-2.5 border-t border-separator pt-4 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Instagram</dt>
+                <dd>
+                  <StatusPill tone="live">Connected</StatusPill>
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Running automations</dt>
+                <dd className="font-medium tabular-nums">
+                  {metrics?.activeTriggers ?? 0}
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className="card bg-primary text-primary-foreground">
+            <h2 className="text-base font-semibold leading-6">
+              Build your next automation
+            </h2>
+            <p className="mt-1.5 text-sm leading-5 text-primary-foreground/75">
+              Turn a comment, direct message, or story reply into an automatic
+              response.
+            </p>
+            <Button
+              asChild
+              size="sm"
+              className={cn('mt-4 self-start', 'bg-primary-foreground text-primary')}
+            >
+              <Link href="/dashboard/automations">
+                Open the builder
+                <ArrowRightIcon className="size-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          </section>
         </aside>
       </div>
     </div>
   )
 }
 
-function Metric({ label, value, icon: Icon }: { label: string; value: number; icon: React.ComponentType<{ className?: string }> }) {
-  return <div className="border-border py-6 sm:border-r sm:px-6 first:pl-0 last:border-r-0"><div className="flex items-center justify-between"><p className="text-xs font-medium text-muted-foreground">{label}</p><Icon className="size-4 text-muted-foreground" /></div><p className="mt-3 text-3xl font-semibold tracking-tight">{value.toLocaleString()}</p></div>
-}
-
-function EmptyState({ icon: Icon, title, description }: { icon: React.ComponentType<{ className?: string }>; title: string; description: string }) {
-  return <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center"><span className="flex size-10 items-center justify-center rounded-lg bg-secondary"><Icon className="size-4 text-muted-foreground" /></span><h3 className="mt-4 text-sm font-medium">{title}</h3><p className="mt-1.5 text-xs text-muted-foreground">{description}</p></div>
+/**
+ * The shell already renders a session loader, so this only covers the stats
+ * request. Mirrors the real layout closely enough that nothing jumps when the
+ * data lands.
+ */
+function DashboardSkeleton() {
+  return (
+    <div className="section-stack" aria-busy="true">
+      <div className="flex flex-col gap-3">
+        <div className="h-3 w-20 rounded-sm skeleton-wash animate-pulse" />
+        <div className="h-8 w-64 rounded-sm skeleton-wash animate-pulse" />
+        <div className="h-5 w-80 max-w-full rounded-sm skeleton-wash animate-pulse" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 min-[64rem]:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <StatCardSkeleton key={i} />
+        ))}
+      </div>
+      <div className="grid gap-4 min-[64rem]:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="card card-none overflow-hidden">
+          <div className="flex flex-col gap-2 p-5">
+            <div className="h-6 w-48 rounded-sm skeleton-wash animate-pulse" />
+            <div className="h-5 w-72 max-w-full rounded-sm skeleton-wash animate-pulse" />
+          </div>
+          <div className="border-t border-separator p-3">
+            <ListSkeleton count={4} />
+          </div>
+        </div>
+        <div className="card">
+          <div className="h-6 w-40 rounded-sm skeleton-wash animate-pulse" />
+          <div className="h-5 w-24 rounded-sm skeleton-wash animate-pulse" />
+        </div>
+      </div>
+    </div>
+  )
 }

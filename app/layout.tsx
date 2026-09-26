@@ -3,45 +3,17 @@ import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
-import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
-  title: "InstaAuto — Instagram Automation",
-  description: "Auto-reply to comments, DMs, and stories with keyword triggers.",
+  title: "Paypage AutoDm — Instagram automation",
+  description:
+    "Auto-reply to comments, DMs, and stories with keyword triggers. Open source, self-hosted, no monthly fees.",
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
     apple: "/apple-icon.png",
   },
 }
-
-const themeBootstrap = `
-(function() {
-  try {
-    var stored = window.localStorage.getItem('insta-p8-theme');
-    var theme = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'dark';
-    var resolved = theme === 'system'
-      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-      : theme;
-    var root = document.documentElement;
-    root.classList.toggle('dark', resolved === 'dark');
-    root.style.colorScheme = resolved;
-    root.dataset.theme = resolved;
-  } catch (_) { /* noop */ }
-})();
-`.trim()
 
 export default function RootLayout({
   children,
@@ -49,15 +21,23 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
-        {/* Pre-hydration theme bootstrap — prevents flash of wrong theme */}
-        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+        {/* viewport-fit=cover is required for the safe-area insets the bottom
+            nav and bottom sheet rely on (§20.6). */}
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
       </head>
-      <body className={`font-sans antialiased bg-background text-foreground`} suppressHydrationWarning>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+      <body className="bg-background font-sans text-foreground antialiased">
+        {children}
         <Analytics />
         <Toaster />
       </body>
