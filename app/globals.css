@@ -408,7 +408,6 @@
 
   /* ---------- Fields (§10) ---------- */
   .input {
-    display: flex;
     width: 100%;
     min-width: 0;
     height: 2.5rem;                       /* 40px below 640px */
